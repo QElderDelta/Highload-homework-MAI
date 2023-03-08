@@ -1,0 +1,72 @@
+# Компонентная архитектура
+<!-- Состав и взаимосвязи компонентов системы между собой и внешними системами с указанием протоколов, ключевые технологии, используемые для реализации компонентов.
+Диаграмма контейнеров C4 и текстовое описание. 
+-->
+## Компонентная диаграмма
+
+```plantuml
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddElementTag("microService", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white", $legendText="microservice")
+AddElementTag("storage", $shape=RoundedBoxShape(), $bgColor="lightSkyBlue", $fontColor="white")
+
+Person(admin, "Администратор")
+Person(user, "Пользователь")
+
+System_Ext(web_site, "Клиентский веб-сайт", "HTML, CSS, JavaScript, React", "Веб-интерфейс")
+
+System_Boundary(conference_site, "Сайт магазина") {
+   'Container(web_site, "Клиентский веб-сайт", ")
+   Container(client_service, "Сервис авторизации", "C++", "Сервис управления пользователями", $tags = "microService")    
+   Container(post_service, "Сервис товаров", "C++", "Сервис управления товарами", $tags = "microService") 
+   Container(blog_service, "Сервис корзин", "C++", "Сервис управления корзинами пользователей", $tags = "microService")   
+   ContainerDb(db, "База данных", "MySQL", "Хранение данных о пользователях, товарах и корзинах", $tags = "storage")
+   
+}
+
+Rel(admin, web_site, "Добавление товаров на сайт")
+Rel(user, web_site, "Регистрация на сайте, просмотр и добавление товаров в корзину")
+
+Rel(web_site, client_service, "Работа с пользователями", "localhost/users")
+Rel(client_service, db, "INSERT/SELECT", "SQL")
+
+Rel(web_site, post_service, "Работа с товарами", "localhost/products")
+Rel(post_service, db, "INSERT/SELECT", "SQL")
+
+Rel(web_site, blog_service, "Работа с корзинами", "localhost/carts")
+Rel(blog_service, db, "INSERT/SELECT/UPDATE", "SQL")
+
+@enduml
+```
+## Список компонентов  
+
+### Сервис авторизации
+**API**:
+-	Создание нового пользователя
+      - Входные параметры: login, пароль, имя, фамилия, email
+      - Выходные параметры: отсутствуют
+-	Поиск пользователя по логину
+     - Входные параметры:  login
+     - Выходные параметры: имя, фамилия, email
+-	Поиск пользователя по маске имени и фамилии
+     - Входные параметры: маска фамилии, маска имени
+     - Выходные параметры: login, имя, фамилия, email
+
+### Сервис товаров
+**API**:
+- Создание товара
+  - Входные параметры: название товара, категория, цена
+  - Выходные параметры: идентификатор товара
+- Получение списка всех товаров
+  - Входные параметры: отсутствуют
+  - Выходные параметры: массив элементов, каждый из которых представляет собой товар и  содержит его название, категорию и цену
+
+### Сервис корзин
+**API**:
+- Добавление товара в корзину
+  - Входные параметры: login, идентификатор товара
+  - Выходные параметры: отсутствуют
+- Получение корзины для пользователя
+  - Входные параметры: login
+  - Выходные параметры: массив элементов, каждый из которых представляет собой товар и  содержит его название, категорию и цену
