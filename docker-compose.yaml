@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  db-node:
+    image: mariadb
+    container_name: db-node
+    ports:
+      - 3306:3306
+    volumes:
+      - db-node-data:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    networks:
+      - arch-network
+
+volumes:
+  db-node-data:
+
+networks:
+  arch-network:
+    driver: "bridge"
+    external: false
+
