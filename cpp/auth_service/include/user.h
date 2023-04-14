@@ -4,8 +4,10 @@
 
 struct User {
     std::string login;
-    std::string first_name;
-    std::string last_name;
+    std::string firstName;
+    std::string lastName;
     std::string password;
     std::string email;
+
+    std::string toJson() const;
 };

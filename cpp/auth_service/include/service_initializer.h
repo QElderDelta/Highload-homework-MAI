@@ -5,7 +5,4 @@
 class ServiceInitializer : public IServiceInitializer {
 public:
     void initialize() override;
-
-private:
-    static void createUserTable();
 };
