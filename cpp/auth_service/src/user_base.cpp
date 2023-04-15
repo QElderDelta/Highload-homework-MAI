@@ -2,7 +2,6 @@
 
 #include <db_session_manager.h>
 
-#include <Poco/Data/MySQL/MySQLException.h>
 #include <Poco/Data/Statement.h>
 
 using namespace Poco::Data::Keywords;
@@ -44,13 +43,19 @@ UserBase::RegisteredUserInfo UserBase::registerUser(const User &user) {
     }
 
     auto session = DatabaseSessionManager::get().getSession();
-    Poco::Data::Statement statement(session);
+    Poco::Data::Statement insert(session);
 
-    statement << "INSERT INTO User (login, password, first_name, last_name, email) VALUES(?, ?, ?, ?, ?)", use(
+    insert << "INSERT INTO User (login, password, first_name, last_name, email) VALUES(?, ?, ?, ?, ?)", use(
             copy.login), use(copy.password), use(copy.firstName), use(copy.lastName), use(copy.email);
-    statement.execute();
+    insert.execute();
 
-    result.userId = getUserId(user.login);
+    Poco::Data::Statement select(session);
+
+    int userId;
+    select << "SELECT LAST_INSERT_ID()", into(userId);
+    select.execute();
+
+    result.userId = userId;
     result.result = UserBase::UserRegistrationResult::Ok;
 
     return result;
@@ -92,16 +97,4 @@ std::vector<User> UserBase::findUserByNameMasks(const std::string &firstNameMask
     }
 
     return result;
-}
-
-int UserBase::getUserId(const std::string &login) {
-    auto session = DatabaseSessionManager::get().getSession();
-    Poco::Data::Statement statement(session);
-
-    int id;
-
-    statement << "SELECT id FROM User WHERE login=?", use(const_cast<std::string &>(login)), into(id);
-    statement.execute();
-
-    return id;
 }

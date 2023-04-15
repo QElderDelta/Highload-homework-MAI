@@ -27,7 +27,4 @@ public:
     static std::optional<User> findUserByLogin(const std::string& login);
 
     static std::vector<User> findUserByNameMasks(const std::string& firstNameMask, const std::string& lastNameMask);
-
-private:
-    static int getUserId(const std::string& login);
 };
