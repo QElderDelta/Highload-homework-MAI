@@ -12,20 +12,24 @@ set(CMAKE_CXX_STANDARD 17)
 
 if (MSVC)
     add_compile_options(/W4 /WX)
-else()
+else ()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
-endif()
+endif ()
 
 conan_cmake_configure(REQUIRES poco/1.12.4
-                      GENERATORS cmake_find_package)
+        GENERATORS cmake_find_package)
 
 conan_cmake_autodetect(settings)
 
 conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD missing
-                    REMOTE conancenter
-                    SETTINGS ${settings})
+        BUILD missing
+        REMOTE conancenter
+        SETTINGS ${settings})
 
 find_package(Poco)
 
+add_subdirectory(utils)
+
 add_subdirectory(auth_service)
+add_subdirectory(product_service)
+add_subdirectory(cart_service)
