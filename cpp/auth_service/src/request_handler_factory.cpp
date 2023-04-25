@@ -1,4 +1,5 @@
 #include "authentication_common.h"
+#include "default_request_handler.h"
 #include "request_handler_factory.h"
 #include "user_base.h"
 #include "user_validator.h"
@@ -8,24 +9,12 @@
 #include <Poco/Net/HTTPServerResponse.h>
 
 namespace {
-    std::optional<AuthData> getAuthData(Poco::Net::HTTPServerRequest &request) {
-        if (!request.hasCredentials()) {
-            return std::nullopt;
-        }
-
-        std::string schema, credentials;
-        request.getCredentials(schema, credentials);
-
-        return AuthData{std::move(schema), std::move(credentials)};
-    }
-
-    void handleAuthenticationResult(AuthenticationResult result, Poco::Net::HTTPServerResponse &response) {
+    void handleAuthenticationResult(AuthenticationResult result, Poco::Net::HTTPServerResponse& response) {
         switch (result) {
             case AuthenticationResult::NotAuthenticated:
-                response.setStatus(Poco::Net::HTTPResponse::HTTP_UNAUTHORIZED);
-                break;
+                [[fallthrough]];
             case AuthenticationResult::BadCredentials:
-                response.setStatus(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+                response.setStatus(Poco::Net::HTTPResponse::HTTP_UNAUTHORIZED);
                 break;
             case AuthenticationResult::InternalError:
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
@@ -36,17 +25,9 @@ namespace {
         response.send();
     }
 
-    class DefaultHandler : public Poco::Net::HTTPRequestHandler {
-    public:
-        void handleRequest(Poco::Net::HTTPServerRequest &, Poco::Net::HTTPServerResponse &response) override {
-            response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
-            response.send();
-        }
-    };
-
     class AuthenticationHandler : public Poco::Net::HTTPRequestHandler {
     public:
-        void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response) override {
+        void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override {
             if (auto authData = getAuthData(request)) {
                 handleAuthenticationResult(authenticateUser(*authData), response);
             } else {
@@ -57,14 +38,14 @@ namespace {
 
     class RegistrationHandler : public Poco::Net::HTTPRequestHandler {
     public:
-        void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response) override {
+        void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override {
             Poco::Net::HTMLForm body(request, request.stream());
 
             const auto hasAllData = [&body]() {
                 constexpr std::array requiredFields = {"login", "first_name", "last_name", "password", "email"};
 
                 return std::all_of(requiredFields.begin(), requiredFields.end(),
-                                   [&body](const char *field) { return body.has(field); });
+                                   [&body](const char* field) { return body.has(field); });
             }();
 
             if (!hasAllData) {
@@ -97,17 +78,17 @@ namespace {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             }
 
-            auto &stream = response.send();
+            auto& stream = response.send();
 
             if (info.userId) {
-                stream << "{" << "user_id: " << *info.userId << "}";
+                stream << "{\"user_id\": " << *info.userId << "}";
             }
         }
     };
 
     class SearchHandler : public Poco::Net::HTTPRequestHandler {
     public:
-        void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response) override {
+        void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override {
             if (auto authData = getAuthData(request)) {
                 if (auto authResult = authenticateUser(*authData); authResult != AuthenticationResult::Authenticated) {
                     handleAuthenticationResult(authResult, response);
@@ -128,7 +109,7 @@ namespace {
                     response.setChunkedTransferEncoding(true);
                     response.setContentType("application/json");
 
-                    if (auto &stream = response.send(); foundUser) {
+                    if (auto& stream = response.send(); foundUser) {
                         stream << foundUser->toJson();
                     }
                 } catch (...) {
@@ -144,7 +125,7 @@ namespace {
                     response.setChunkedTransferEncoding(true);
                     response.setContentType("application/json");
 
-                    auto &stream = response.send();
+                    auto& stream = response.send();
 
                     if (!foundUsers.empty()) {
                         stream << "{";
@@ -171,13 +152,13 @@ namespace {
     };
 }
 
-Poco::Net::HTTPRequestHandler *
-RequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest &request) {
-    static auto hasSubstr = [](const std::string &text, std::string_view pattern) {
+Poco::Net::HTTPRequestHandler*
+RequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request) {
+    static auto hasSubstr = [](const std::string& text, std::string_view pattern) {
         return text.find(pattern) != std::string::npos;
     };
 
-    const auto &uri = request.getURI();
+    const auto& uri = request.getURI();
 
     if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET && hasSubstr(uri, "/auth")) {
         return new AuthenticationHandler();

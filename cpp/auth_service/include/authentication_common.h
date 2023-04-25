@@ -1,5 +1,7 @@
 #pragma once
 
+#include "auth_data.h"
+
 #include <string>
 
 enum class AuthenticationResult {
@@ -7,11 +9,6 @@ enum class AuthenticationResult {
     NotAuthenticated,
     BadCredentials,
     InternalError
-};
-
-struct AuthData {
-    std::string schema;
-    std::string credentials;
 };
 
 AuthenticationResult authenticateUser(const AuthData& authData);
