@@ -1,0 +1,82 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Highload lab API description"
+  description: Описание API для домашнего задания по курсу Архитектура программных систем
+servers:
+  - url: http://localhost:8083
+    description: Cart service
+paths:
+  /add_item:
+    post:
+      summary: Add item to cart for given user
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/AddItemRequest"
+      responses:
+        "200":
+          description: Added item to cart for given user
+        "400":
+          description: Necessary request parameters missing
+        "401":
+          description: Failed to authenticate user using provided credentials
+        "500":
+          description: Unexpected error
+  /get_cart:
+    get:
+      summary: Get items in cart for given user
+      parameters:
+        - name: user_id
+          description: User's id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Items in cart for given user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          description: Failed to authenticate user using provided credentials
+        "500":
+          description: Unexpected error
+components:
+  schemas:
+    Cart:
+      type: array
+      items:
+        $ref: "#/components/schemas/CartEntry"
+    CartEntry:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+    AddItemRequest:
+      type: object
+      required:
+        - user_id
+        - product_id
+        - quantity
+      properties:
+        user_id:
+          type: integer
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []

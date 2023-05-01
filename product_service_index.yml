@@ -1,0 +1,69 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Highload lab API description"
+  description: Описание API для домашнего задания по курсу Архитектура программных систем
+servers:
+  - url: http://localhost:8082
+    description: Product service
+paths:
+  /add_product:
+    post:
+      summary: Add new product
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        "200":
+          description: Added product's id
+          content:
+            application/json:
+              schema:
+                type: integer
+        "400":
+          description: Necessary request parameters missing
+        "401":
+          description: Failed to authenticate user using provided credentials
+        "500":
+          description: Unexpected error
+  /get_all_products:
+    get:
+      summary: Get all products
+      responses:
+        "200":
+          description: Users for the provided masks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsList"
+        "401":
+          description: Failed to authenticate user using provided credentials
+        "500":
+          description: Unexpected error
+components:
+  schemas:
+    ProductsList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Product"
+    Product:
+      type: object
+      required:
+        - name
+        - category
+        - price
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: integer
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
