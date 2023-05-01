@@ -7,12 +7,13 @@ using namespace Poco::Data::Keywords;
 void ProductBase::initialize() {
     auto session = DatabaseSessionManager::get().getSession();
 
-    session << "CREATE TABLE IF NOT EXISTS `Product` (`id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT, "
+    session
+            << "CREATE TABLE IF NOT EXISTS `Product` (`id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT, "
                "`name` VARCHAR(50) NOT NULL, `category` VARCHAR(50) NOT NULL, `price` INT NOT NULL)", now;
 }
 
-int ProductBase::addProduct(const Product &product) {
-    auto &copy = const_cast<Product &>(product);
+int ProductBase::addProduct(const Product& product) {
+    auto& copy = const_cast<Product&>(product);
 
     auto session = DatabaseSessionManager::get().getSession();
     Poco::Data::Statement insert(session);
@@ -32,12 +33,13 @@ int ProductBase::addProduct(const Product &product) {
 
 std::vector<Product> ProductBase::getAllProducts() {
     Product fetchedProduct;
-    std::vector<Product> result;
+    std::vector <Product> result;
 
     auto session = DatabaseSessionManager::get().getSession();
     Poco::Data::Statement statement(session);
 
-    statement << "SELECT name, category, price FROM Product", into(fetchedProduct.name), into(
+    statement << "SELECT id, name, category, price FROM Product", into(fetchedProduct.id), into(
+            fetchedProduct.name), into(
             fetchedProduct.category), into(fetchedProduct.price), range(0, 1);
 
     while (!statement.done()) {
