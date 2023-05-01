@@ -15,13 +15,14 @@ void UserBase::initialize() {
                "`email` VARCHAR(50) NOT NULL UNIQUE)", Poco::Data::Keywords::now;
 }
 
-bool UserBase::authenticateUser(const std::string &login, const std::string &password) {
+bool UserBase::authenticateUser(const std::string& login, const std::string& password) {
     std::vector<std::string> fetchedPasswords;
 
     auto session = DatabaseSessionManager::get().getSession();
     Poco::Data::Statement statement(session);
 
-    statement << "SELECT password FROM User WHERE login=?", use(const_cast<std::string &>(login)), into(
+    statement << "SELECT password FROM User WHERE login=?", use(
+            const_cast<std::string&>(login)), into(
             fetchedPasswords);
 
     statement.execute();
@@ -33,9 +34,9 @@ bool UserBase::authenticateUser(const std::string &login, const std::string &pas
     return fetchedPasswords[0] == password;
 }
 
-UserBase::RegisteredUserInfo UserBase::registerUser(const User &user) {
+UserBase::RegisteredUserInfo UserBase::registerUser(const User& user) {
     UserBase::RegisteredUserInfo result;
-    auto &copy = const_cast<User &>(user);
+    auto& copy = const_cast<User&>(user);
 
     if (UserBase::findUserByLogin(user.login)) {
         result.result = UserBase::UserRegistrationResult::AlreadyExists;
@@ -45,8 +46,10 @@ UserBase::RegisteredUserInfo UserBase::registerUser(const User &user) {
     auto session = DatabaseSessionManager::get().getSession();
     Poco::Data::Statement insert(session);
 
-    insert << "INSERT INTO User (login, password, first_name, last_name, email) VALUES(?, ?, ?, ?, ?)", use(
-            copy.login), use(copy.password), use(copy.firstName), use(copy.lastName), use(copy.email);
+    insert
+            << "INSERT INTO User (login, password, first_name, last_name, email) VALUES(?, ?, ?, ?, ?)", use(
+            copy.login), use(copy.password), use(copy.firstName), use(copy.lastName), use(
+            copy.email);
     insert.execute();
 
     Poco::Data::Statement select(session);
@@ -61,14 +64,15 @@ UserBase::RegisteredUserInfo UserBase::registerUser(const User &user) {
     return result;
 }
 
-std::optional<User> UserBase::findUserByLogin(const std::string &login) {
+std::optional<User> UserBase::findUserByLogin(const std::string& login) {
     User user;
 
     auto session = DatabaseSessionManager::get().getSession();
     Poco::Data::Statement statement(session);
 
     statement << "SELECT first_name, last_name, email FROM User WHERE User.login=?", use(
-            const_cast<std::string &>(login)), into(user.firstName), into(user.lastName), into(user.email),
+            const_cast<std::string&>(login)), into(user.firstName), into(user.lastName), into(
+            user.email),
             range(0, 1);
 
     if (statement.execute() != 1) {
@@ -78,7 +82,8 @@ std::optional<User> UserBase::findUserByLogin(const std::string &login) {
     return user;
 }
 
-std::vector<User> UserBase::findUserByNameMasks(const std::string &firstNameMask, const std::string &lastNameMask) {
+std::vector<User>
+UserBase::findUserByNameMasks(const std::string& firstNameMask, const std::string& lastNameMask) {
     std::vector<User> result;
     User fetchedUser;
 
@@ -87,13 +92,15 @@ std::vector<User> UserBase::findUserByNameMasks(const std::string &firstNameMask
 
     statement
             << "SELECT login, first_name, last_name, email FROM User WHERE first_name LIKE ? AND last_name LIKE ?", use(
-            const_cast<std::string &>(firstNameMask)), use(const_cast<std::string &>(lastNameMask)),
-            into(fetchedUser.login), into(fetchedUser.firstName), into(fetchedUser.lastName), into(fetchedUser.email),
+            const_cast<std::string&>(firstNameMask)), use(const_cast<std::string&>(lastNameMask)),
+            into(fetchedUser.login), into(fetchedUser.firstName), into(fetchedUser.lastName), into(
+            fetchedUser.email),
             range(0, 1);
 
     while (!statement.done()) {
-        statement.execute();
-        result.push_back(std::move(fetchedUser));
+        if (statement.execute() == 1) {
+            result.push_back(std::move(fetchedUser));
+        }
     }
 
     return result;

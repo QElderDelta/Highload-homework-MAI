@@ -55,9 +55,9 @@ Cart CartBase::getCartForUser(int userId) {
             quantity), use(userId), range(0, 1);
 
     while (!select.done()) {
-        select.execute();
-
-        result.items[itemId] += quantity;
+        if (select.execute() == 1) {
+            result.items[itemId] += quantity;
+        }
     }
 
     return result;
