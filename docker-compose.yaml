@@ -59,8 +59,28 @@ services:
     networks:
       - arch-network
     depends_on:
-      db-node:
-        condition: service_healthy
+      - auth-service
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: docker/cart_service/Dockerfile
+    container_name: cart-service
+    environment:
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=${DB_HOST}
+      - SERVICE_PORT=8083
+      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
+      - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST}
+    ports:
+      - "8083:8083"
+    networks:
+      - arch-network
+    depends_on:
+      - auth-service
 
 volumes:
   db-node-data:
