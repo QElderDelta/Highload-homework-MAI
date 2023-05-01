@@ -1,5 +1,6 @@
 #include "authentication_common.h"
 #include "default_request_handler.h"
+#include "healthcheck_handler.h"
 #include "request_handler_factory.h"
 #include "user_base.h"
 #include "user_validator.h"
@@ -168,8 +169,12 @@ RequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& 
         return new RegistrationHandler();
     }
 
-    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET && hasSubstr(request.getURI(), "/search")) {
+    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET && hasSubstr(uri, "/search")) {
         return new SearchHandler();
+    }
+
+    if(request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET && hasSubstr(uri, HealthcheckHandler::HealthcheckUri)) {
+        return new HealthcheckHandler();
     }
 
     return new DefaultHandler();

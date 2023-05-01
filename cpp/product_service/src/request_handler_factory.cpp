@@ -1,6 +1,7 @@
 #include "auth_data.h"
 #include "authentication_request.h"
 #include "default_request_handler.h"
+#include "healthcheck_handler.h"
 #include "product.h"
 #include "product_base.h"
 #include "product_validator.h"
@@ -13,8 +14,10 @@
 namespace {
     class CreationHandler : public Poco::Net::HTTPRequestHandler {
     public:
-        void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override {
-            if (auto credentials = getAuthData(request); !credentials || !sendAuthenticationRequest(*credentials)) {
+        void handleRequest(Poco::Net::HTTPServerRequest& request,
+                           Poco::Net::HTTPServerResponse& response) override {
+            if (auto credentials = getAuthData(request); !credentials ||
+                                                         !sendAuthenticationRequest(*credentials)) {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_UNAUTHORIZED);
                 response.send();
                 return;
@@ -28,9 +31,11 @@ namespace {
                 return;
             }
 
-            Product product{form.get("name"), form.get("category"), std::stoi(form.get("price"))};
+            Product product{form.get("name"), form.get("category"), std::stoi(form.get("price")),
+                            -1};
 
-            if (ProductValidator::validate(product) != ProductValidator::ProductValidationResult::Ok) {
+            if (ProductValidator::validate(product) !=
+                ProductValidator::ProductValidationResult::Ok) {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
                 response.send();
                 return;
@@ -53,8 +58,10 @@ namespace {
 
     class GetAllHandler : public Poco::Net::HTTPRequestHandler {
     public:
-        void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override {
-            if (auto credentials = getAuthData(request); !credentials || !sendAuthenticationRequest(*credentials)) {
+        void handleRequest(Poco::Net::HTTPServerRequest& request,
+                           Poco::Net::HTTPServerResponse& response) override {
+            if (auto credentials = getAuthData(request); !credentials ||
+                                                         !sendAuthenticationRequest(*credentials)) {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_UNAUTHORIZED);
                 response.send();
                 return;
@@ -98,12 +105,19 @@ RequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& 
 
     const auto& uri = request.getURI();
 
-    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST && hasSubstr(uri, "/add_product")) {
+    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST &&
+        hasSubstr(uri, "/add_product")) {
         return new CreationHandler();
     }
 
-    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET && hasSubstr(uri, "/get_all_products")) {
+    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET &&
+        hasSubstr(uri, "/get_all_products")) {
         return new GetAllHandler();
+    }
+
+    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET &&
+        hasSubstr(uri, HealthcheckHandler::HealthcheckUri)) {
+        return new HealthcheckHandler();
     }
 
     return new DefaultHandler();
