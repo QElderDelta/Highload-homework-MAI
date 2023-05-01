@@ -19,12 +19,9 @@ endif ()
 conan_cmake_configure(REQUIRES poco/1.12.4
         GENERATORS cmake_find_package)
 
-conan_cmake_autodetect(settings)
-
 conan_cmake_install(PATH_OR_REFERENCE .
         BUILD missing
-        REMOTE conancenter
-        SETTINGS ${settings})
+        REMOTE conancenter)
 
 find_package(Poco)
 
