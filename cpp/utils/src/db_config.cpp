@@ -1,7 +1,6 @@
 #include "db_config.h"
 
 #include <cstdlib>
-#include <iostream>
 
 DatabaseConfig::DatabaseConfig() {
     db_name = std::getenv("MYSQL_DATABASE");
@@ -11,7 +10,7 @@ DatabaseConfig::DatabaseConfig() {
     user = std::getenv("MYSQL_USER");
 }
 
-DatabaseConfig& DatabaseConfig::get() {
+DatabaseConfig &DatabaseConfig::get() {
     static DatabaseConfig config;
 
     return config;
