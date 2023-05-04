@@ -14,10 +14,6 @@ void CartBase::initialize() {
                "CONSTRAINT `fk_product_id` "
                "FOREIGN KEY (product_id) REFERENCES Product (id) "
                "ON DELETE CASCADE "
-               "ON UPDATE RESTRICT, "
-               "CONSTRAINT `fk_user_id` "
-               "FOREIGN KEY (user_id) REFERENCES User (id) "
-               "ON DELETE CASCADE "
                "ON UPDATE RESTRICT);", now;
 }
 
