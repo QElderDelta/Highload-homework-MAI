@@ -2,8 +2,9 @@
 
 #include <Poco/Net/HTTPClientSession.h>
 
-Poco::Net::HTTPResponse sendHttpRequest(const std::string& host, int port, const std::string& uri,
-                                        const std::string& method, const AuthData& credentials) {
+HttpRequestResult sendHttpRequest(const std::string& host, int port, const std::string& uri,
+                                  const std::string& method, const AuthData& credentials,
+                                  const std::string& body) {
     Poco::Net::HTTPClientSession session(host, port);
 
     Poco::Net::HTTPRequest request(method, uri);
@@ -11,8 +12,20 @@ Poco::Net::HTTPResponse sendHttpRequest(const std::string& host, int port, const
 
     Poco::Net::HTTPResponse response;
 
-    session.sendRequest(request);
-    session.receiveResponse(response);
+    auto& requestStream = session.sendRequest(request);
 
-    return response;
+    requestStream << body;
+
+    auto& responseStream = session.receiveResponse(response);
+
+    HttpRequestResult result;
+
+    std::string temp;
+    while (std::getline(responseStream, temp)) {
+        result.body.append(temp).append("\n");
+    }
+
+    result.response = response;
+
+    return result;
 }
