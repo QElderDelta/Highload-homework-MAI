@@ -28,7 +28,7 @@ paths:
             schema:
               $ref: "#/components/schemas/RegisterUserRequest"
       responses:
-        "200":
+        "201":
           description: Added user's id
           content:
             application/json:
@@ -36,6 +36,8 @@ paths:
                 type: integer
         "400":
           description: Necessary request parameters missing
+        "409":
+          description: User with such login/email already exists
         "500":
           description: Unexpected error
   /search_by_name:
