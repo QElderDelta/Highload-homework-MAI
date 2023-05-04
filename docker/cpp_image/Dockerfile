@@ -9,7 +9,12 @@ COPY conan/default /root/.conan/profiles/default
 COPY conan conan
 RUN cd conan && conan install .
 
-RUN git clone https://github.com/QElderDelta/Highload-homework-MAI.git code
+#RUN git clone https://github.com/QElderDelta/Highload-homework-MAI.git code
+RUN mkdir code
+COPY cpp code/cpp
 RUN cd code/cpp && mkdir build && cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release && cmake --build .
 
-ENTRYPOINT [ "code/cpp/build/product_service/product_service" ]
+COPY run_service.sh code
+RUN chmod +x code/run_service.sh
+
+ENTRYPOINT [ "code/run_service.sh" ]
