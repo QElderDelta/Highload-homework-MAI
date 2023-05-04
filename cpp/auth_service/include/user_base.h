@@ -26,5 +26,12 @@ public:
 
     static std::optional<User> findUserByLogin(const std::string& login);
 
-    static std::vector<User> findUserByNameMasks(const std::string& firstNameMask, const std::string& lastNameMask);
+    static std::vector<User>
+    findUserByNameMasks(const std::string& firstNameMask, const std::string& lastNameMask);
+
+private:
+
+    static int getShard(std::string_view login);
+
+    static constexpr int ShardsCount = 2;
 };
