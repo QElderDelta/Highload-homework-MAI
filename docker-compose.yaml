@@ -1,18 +1,100 @@
 version: "3"
 
 services:
-  db-node:
+  db-node-1:
     image: mariadb
-    container_name: db-node
+    container_name: db-node-1
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
     ports:
-      - "3306:3306"
+      - "3322:3306"
     volumes:
-      - db-node-data:/var/lib/mysql
+      - db-node-1-data:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    networks:
+      - arch-network
+
+  db-node-2:
+    image: mariadb
+    container_name: db-node-2
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    ports:
+      - "3388:3306"
+    volumes:
+      - db-node-2-data:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    networks:
+      - arch-network
+
+  db-node-service:
+    image: mariadb
+    container_name: db-node-service
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    ports:
+      - "3328:3306"
+    volumes:
+      - db-node-service-data:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    networks:
+      - arch-network
+
+  proxysql:
+    build:
+      context: .
+      dockerfile: docker/proxysql/Dockerfile
+    container_name: proxysql
+    volumes:
+      - ./config/proxysql.cnf:/etc/proxysql.cnf
+      - proxysql-data:/var/lib/proxysql
+    ports:
+      - "6032:6032"
+      - "6033:6033"
+    healthcheck:
+      test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --host=127.0.0.1 --port=6033 --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    depends_on:
+      db-node-1:
+        condition: service_healthy
+      db-node-2:
+        condition: service_healthy
+      db-node-service:
+        condition: service_healthy
+    networks:
+      - arch-network
+
+  db-node-3:
+    image: mariadb
+    container_name: db-node-3
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    ports:
+      - "3337:3306"
+    volumes:
+      - db-node-3-data:/var/lib/mysql
     healthcheck:
       test: "/usr/bin/mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute \"SHOW DATABASES;\""
       timeout: 20s
@@ -29,15 +111,15 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - DB_PORT=${DB_PORT}
-      - DB_HOST=${DB_HOST}
+      - DB_PORT=${PROXYSQL_PORT}
+      - DB_HOST=${PROXYSQL_HOST}
       - SERVICE_PORT=8081
     ports:
       - "8081:8081"
     networks:
       - arch-network
     depends_on:
-      db-node:
+      proxysql:
         condition: service_healthy
 
   product-service:
@@ -59,7 +141,10 @@ services:
     networks:
       - arch-network
     depends_on:
-      - auth-service
+      db-node-3:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
 
   cart-service:
     build:
@@ -80,10 +165,19 @@ services:
     networks:
       - arch-network
     depends_on:
-      - auth-service
+      db-node-3:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
 
 volumes:
-  db-node-data:
+  db-node-1-data:
+  db-node-2-data:
+  db-node-service-data:
+  db-node-3-data:
+  proxysql-data:
 
 
 networks:
