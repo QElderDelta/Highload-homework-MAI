@@ -14,11 +14,7 @@ UserCache& UserCache::get() {
 }
 
 std::optional<std::string> UserCache::getUserFromCache(const std::string& login) {
-    if (auto entry = cache_.get(login); entry) {
-        return *entry;
-    }
-
-    return std::nullopt;
+    return cache_.get(login);
 }
 
 void UserCache::addUserToCache(const std::string& login, const std::string& userInfo) {
