@@ -1,6 +1,7 @@
 #include "authentication_common.h"
 #include "default_request_handler.h"
 #include "healthcheck_handler.h"
+#include "kafka_config.h"
 #include "request_handler_factory.h"
 #include "user_base.h"
 #include "user_cache.h"
@@ -75,23 +76,26 @@ namespace {
             UserBase::RegisteredUserInfo info;
 
             try {
-                if (info = UserBase::registerUser(user); info.result ==
-                                                         UserBase::UserRegistrationResult::AlreadyExists) {
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_CONFLICT);
-                } else {
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_CREATED);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
+                static cppkafka::Producer producer(KafkaConfig::get());
+
+                const auto msg = user.toJsonWithPassword();
+
+                while (true) {
+                    try {
+                        producer.produce(
+                                cppkafka::MessageBuilder(KafkaConfig::getTopic()).payload(msg));
+                        break;
+                    } catch (...) {
+
+                    }
                 }
+
+                response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
             } catch (...) {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             }
 
-            auto& stream = response.send();
-
-            if (info.userId) {
-                stream << "{\"user_id\": " << *info.userId << "}";
-            }
+            response.send();
         }
     };
 

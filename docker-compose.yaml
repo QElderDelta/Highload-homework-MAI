@@ -114,6 +114,26 @@ services:
     volumes:
       - redis-cache:/data
 
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - arch-network
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_CREATE_TOPICS: "user_queue:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    networks:
+      - arch-network
+
   auth-service:
     build:
       context: .
@@ -127,6 +147,8 @@ services:
       - DB_HOST=${PROXYSQL_HOST}
       - CACHE_HOST=user-cache
       - CACHE_PORT=6379
+      - KAFKA_TOPIC=user_queue
+      - KAFKA_CONNECTION_STR=kafka:9092
       - SERVICE_PORT=8081
       - SERVICE_EXE=/code/cpp/build/auth_service/auth_service
     ports:
@@ -137,6 +159,31 @@ services:
       proxysql:
         condition: service_healthy
       user-cache:
+        condition: service_started
+      kafka:
+        condition: service_started
+
+  kafka-consumer:
+    build:
+      context: .
+      dockerfile: docker/cpp_image/Dockerfile
+    container_name: kafka-consumer
+    environment:
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - DB_PORT=${PROXYSQL_PORT}
+      - DB_HOST=${PROXYSQL_HOST}
+      - KAFKA_TOPIC=user_queue
+      - KAFKA_CONNECTION_STR=kafka:9092
+      - SERVICE_PORT=8088
+      - SERVICE_EXE=/code/cpp/build/auth_service/kafka_consumer
+    ports:
+      - "8088:8088"
+    networks:
+      - arch-network
+    depends_on:
+      auth-service:
         condition: service_started
 
   product-service:
