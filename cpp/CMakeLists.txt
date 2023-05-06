@@ -18,6 +18,7 @@ endif ()
 
 conan_cmake_configure(REQUIRES
         poco/1.12.4 redis-plus-plus/1.3.7
+        cppkafka/0.4.0
         GENERATORS cmake_find_package)
 
 conan_cmake_install(PATH_OR_REFERENCE .
@@ -26,6 +27,7 @@ conan_cmake_install(PATH_OR_REFERENCE .
 
 find_package(Poco)
 find_package(redis++)
+find_package(CppKafka)
 
 add_subdirectory(utils)
 
