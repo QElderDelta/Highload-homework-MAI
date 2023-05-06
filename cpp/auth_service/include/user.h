@@ -10,4 +10,8 @@ struct User {
     std::string email;
 
     std::string toJson() const;
+
+    std::string toJsonWithPassword() const;
+
+    static User fromJson(const std::string& json);
 };
