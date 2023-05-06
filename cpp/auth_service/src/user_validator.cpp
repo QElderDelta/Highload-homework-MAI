@@ -36,7 +36,7 @@ bool UserValidator::validateEmail(const User& user) {
         return false;
     }
 
-    static std::regex emailRegex(R""(^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$)"");
+    static std::regex emailRegex(R""(^[\w-\.]+@([\w-]+\.)+[\w-]{2,15}$)"");
 
     return std::regex_match(user.email, emailRegex);
 }

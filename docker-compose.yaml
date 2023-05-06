@@ -102,6 +102,18 @@ services:
     networks:
       - arch-network
 
+  user-cache:
+    image: redis:6.2-alpine
+    container_name: user-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning
+    networks:
+      - arch-network
+    volumes:
+      - redis-cache:/data
+
   auth-service:
     build:
       context: .
@@ -113,6 +125,8 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - DB_PORT=${PROXYSQL_PORT}
       - DB_HOST=${PROXYSQL_HOST}
+      - CACHE_HOST=user-cache
+      - CACHE_PORT=6379
       - SERVICE_PORT=8081
       - SERVICE_EXE=/code/cpp/build/auth_service/auth_service
     ports:
@@ -122,6 +136,8 @@ services:
     depends_on:
       proxysql:
         condition: service_healthy
+      user-cache:
+        condition: service_started
 
   product-service:
     build:
@@ -174,38 +190,6 @@ services:
         condition: service_started
       product-service:
         condition: service_started
-
-  user-cache:
-    image: redis:6.2-alpine
-    container_name: user-cache
-    restart: always
-    ports:
-      - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning
-    networks:
-      - arch-network
-    volumes:
-      - redis-cache:/data
-
-  cache-service:
-    build:
-      context: .
-      dockerfile: docker/cpp_image/Dockerfile
-    container_name: cache-service
-    environment:
-      - SERVICE_PORT=8084
-      - CACHE_HOST=user-cache
-      - CACHE_PORT=6379
-      - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST}
-      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
-      - SERVICE_EXE=/code/cpp/build/cache_service/cache_service
-    ports:
-      - "8084:8084"
-    networks:
-      - arch-network
-    depends_on:
-      - user-cache
-      - auth-service
 
 volumes:
   db-node-1-data:

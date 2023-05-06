@@ -3,11 +3,14 @@
 #include "healthcheck_handler.h"
 #include "request_handler_factory.h"
 #include "user_base.h"
+#include "user_cache.h"
 #include "user_validator.h"
 
 #include <Poco/Net/HTMLForm.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
+
+#include <iostream>
 
 namespace {
     void handleAuthenticationResult(AuthenticationResult result,
@@ -114,16 +117,29 @@ namespace {
                 return;
             }
 
+            const std::string userLogin = body.get("login");
+
             try {
-                auto foundUser = UserBase::findUserByLogin(body.get("login"));
+                std::string userJson;
+
+                if (auto cacheValue = UserCache::get().getUserFromCache(userLogin); cacheValue) {
+                    userJson = *cacheValue;
+                } else {
+                    auto foundUser = UserBase::findUserByLogin(userLogin);
+
+                    if (foundUser) {
+                        userJson = foundUser->toJson();
+
+                        UserCache::get().addUserToCache(userLogin, userJson);
+                    }
+                }
+
 
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                 response.setChunkedTransferEncoding(true);
                 response.setContentType("application/json");
 
-                if (auto& stream = response.send(); foundUser) {
-                    stream << foundUser->toJson();
-                }
+                response.send() << userJson;
             } catch (...) {
                 response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
                 response.send();
